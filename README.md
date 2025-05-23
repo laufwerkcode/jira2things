@@ -8,7 +8,7 @@ A Python application that synchronizes JIRA tickets to your local SQLite databas
 
 It is the spiritual successor to [hackerdude/jiratotaskmanagers](https://github.com/hackerdude/jiratotaskmanagers) and it follows the same philosophy of the "one tasklist" system. By mapping active tickets to Things Today status it also keeps you sharp on updating your Jira tickets to their correct statuses.
 
-My belief is that we should activly plan our day and what we want todo with out time. This app helps me to sync up Jira to my beloved [Things todo app](https://culturedcode.com/things/)
+My belief is that we should actively plan our day and what we want to do with our time. This app helps me to sync up Jira to my beloved [Things todo app](https://culturedcode.com/things/)
 
 ## Features
 
@@ -20,7 +20,7 @@ My belief is that we should activly plan our day and what we want todo with out 
 
 ## Requirements
 
-This application uses both `xcall` and `pyThings` to work. They are bundled in this repository under `librarys`. We also use the Python Jira module for auth.
+This application uses both `xcall` and `pyThings` to work. They are bundled in this repository under `libraries`. We also use the Python Jira module for auth.
 
 - [xcall](https://github.com/martinfinke/xcall)
 - [pyThings](https://github.com/lucasjhall/pyThings)
@@ -228,4 +228,8 @@ The script includes basic error handling and will print error messages if:
 
 ## Contributing
 
-Feel free to submit issues and pull requests for additional features or improvements.
+Feel free to submit issues and pull requests for additional features or improvements. I'm looking for testers!
+
+## Ai Disclosure
+
+I used LLMs to enhance the codebase and to check for errors. The banner image is also generated.
