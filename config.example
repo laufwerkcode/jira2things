@@ -1,0 +1,29 @@
+# JIRA Configuration - Required
+JIRA_BASE_URL=https://your-company.atlassian.net
+JIRA_API_TOKEN=your_jira_api_token_here
+JIRA_USER_EMAIL=your.email@company.com
+JIRA_JQL_QUERY=assignee = currentUser() AND updated >= -14d
+
+# Things 3 Configuration - Required for Things sync
+THINGS_AUTH_TOKEN=your_things_auth_token_here
+
+# Things 3 Optional Settings
+THINGS_PROJECT=Jira
+THINGS_TAGS=["jira", "work"]
+
+# Add Jira issue type as tag (epic, story, etc.)
+# Make sure these tags exist in Things first!
+JIRA_TYPE_TAG=true
+
+# Status Mapping - Configure how JIRA statuses map to Things scheduling
+# Tickets with these statuses go to "Today" in Things
+TODAY_STATUS=["In Progress", "Active", "Doing"]
+
+# Tickets with these statuses go to "Anytime" in Things (default for unlisted statuses)
+ANYTIME_STATUS=["To Do", "Open", "Ready", "Dev Ready"]
+
+# Tickets with these statuses go to "Someday" in Things  
+SOMEDAY_STATUS=["Backlog", "Future", "Product Backlog", "Icebox"]
+
+# Tickets with these statuses are marked as completed in Things
+COMPLETED_STATUS=["Done", "Closed", "Resolved", "Completed"] 
