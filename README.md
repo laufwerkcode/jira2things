@@ -8,6 +8,8 @@ A Python application that synchronizes JIRA tickets to your local SQLite databas
 
 It is the spiritual successor to [hackerdude/jiratotaskmanagers](https://github.com/hackerdude/jiratotaskmanagers) and it follows the same philosophy of the "one tasklist" system. By mapping active tickets to Things Today status it also keeps you sharp on updating your Jira tickets to their correct statuses.
 
+My belief is that we should activly plan our day and what we want todo with out time. This app helps me to sync up Jira to my beloved [Things todo app](https://culturedcode.com/things/)
+
 ## Features
 
 - **One-way sync**: Fetch tickets from JIRA → Store in local database → Sync to Things 3
