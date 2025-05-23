@@ -155,7 +155,7 @@ If a status isn't configured, tickets default to **Anytime**.
 ## Getting Things Auth Token
 
 1. Enable Things URL scheme in Things 3 preferences
-2. Use the provided `auth-test.py` script to get your token
+2. Get your token from under the **Manage** button
 3. Add it to your config file as `THINGS_AUTH_TOKEN`
 
 ## Important Notes
