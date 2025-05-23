@@ -1,20 +1,24 @@
 # jira2things
 
+<p align="center">
+  <img src="assets/images/banner.png" alt="Project Banner" height="200">
+</p>
+
 A Python application that synchronizes JIRA tickets to your local SQLite database and integrates with Things 3 for task management.
 
-It is the spiritual successor to [hackerdude/jiratotaskmanagers](https://github.com/hackerdude/jiratotaskmanagers) and it follows the same philosophy of the "one tasklist" system. By mapping active tickets to Things Today status it also keeps you sharp on updating your Jira tickets to their correct statuses. 
- 
+It is the spiritual successor to [hackerdude/jiratotaskmanagers](https://github.com/hackerdude/jiratotaskmanagers) and it follows the same philosophy of the "one tasklist" system. By mapping active tickets to Things Today status it also keeps you sharp on updating your Jira tickets to their correct statuses.
+
 ## Features
 
 - **One-way sync**: Fetch tickets from JIRA → Store in local database → Sync to Things 3
 - **Smart status mapping**: Automatically schedule tasks in Things based on JIRA status
 - **Incremental updates**: Only syncs changed tickets to minimize calls to Things
-- **Robust sync tracking**: Tracks sync status per ticket ('synced', 'not synced', 'unknown')
+- **Robust(ish) sync tracking**: Tracks sync status per ticket ('synced', 'not synced', 'unknown')
 - **Flexible configuration**: Configurable status mappings, tags, and projects
 
 ## Requirements
 
-This application uses both `xcall` and `pyThings` to work. They are bundled in this repository.
+This application uses both `xcall` and `pyThings` to work. They are bundled in this repository under `librarys`
 
 - [xcall](https://github.com/martinfinke/xcall)
 - [pyThings](https://github.com/lucasjhall/pyThings)
@@ -32,7 +36,7 @@ cd jira2things
 
 ```bash
  python3 -m venv .venv
- source .venv/bin/activate 
+ source .venv/bin/activate
 ```
 
 3. Install dependencies:
@@ -117,7 +121,7 @@ Configure how JIRA statuses map to Things scheduling:
 # Tickets with these statuses go to "Today" in Things
 TODAY_STATUS=['In Progress', 'Active', 'Doing']
 
-# Tickets with these statuses go to "Someday" in Things  
+# Tickets with these statuses go to "Someday" in Things
 SOMEDAY_STATUS=['Backlog', 'Future']
 
 # Tickets with these statuses go to "Anytime" in Things (default)
@@ -132,7 +136,7 @@ COMPLETED_STATUS=['Done', 'Closed', 'Resolved']
 The app maps JIRA ticket statuses to Things 3 scheduling areas:
 
 - **Today**: Urgent/active work (appears in Today view)
-- **Anytime**: Ready to work on (appears in Anytime list)  
+- **Anytime**: Ready to work on (appears in Anytime list)
 - **Someday**: Future/backlog items (appears in Someday list)
 - **Completed**: Automatically marked as done in Things
 
@@ -177,7 +181,7 @@ Each ticket has a sync status:
 
 ## Example Workflow
 
-1. **Initial setup**: 
+1. **Initial setup**:
    - Copy `config.example` to `config`
    - Configure JIRA and Things credentials in the `config` file
 2. **First run**: `python main.py` (syncs all matching tickets)
