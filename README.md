@@ -18,10 +18,11 @@ It is the spiritual successor to [hackerdude/jiratotaskmanagers](https://github.
 
 ## Requirements
 
-This application uses both `xcall` and `pyThings` to work. They are bundled in this repository under `librarys`
+This application uses both `xcall` and `pyThings` to work. They are bundled in this repository under `librarys`. We also use the Python Jira module for auth.
 
 - [xcall](https://github.com/martinfinke/xcall)
 - [pyThings](https://github.com/lucasjhall/pyThings)
+- [Python Jira](https://jira.readthedocs.io/en/latest/)
 
 ## Installation
 
