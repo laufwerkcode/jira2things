@@ -2,7 +2,12 @@
 JIRA_BASE_URL=https://your-company.atlassian.net
 JIRA_API_TOKEN=your_jira_api_token_here
 JIRA_USER_EMAIL=your.email@company.com
+
+# JQL Query to select Jira issues for syncing
 JIRA_JQL_QUERY=assignee = currentUser() AND updated >= -14d
+
+# If using Sprints, you may want to modify the query to ensure all items in the current sprint are included:
+# JIRA_JQL_QUERY=assignee = currentUser() AND (updated >= -14d or Sprint IN openSprints())
 
 # Things 3 Configuration - Required for Things sync
 THINGS_AUTH_TOKEN=your_things_auth_token_here
@@ -15,15 +20,27 @@ THINGS_TAGS=["jira", "work"]
 # Make sure these tags exist in Things first!
 JIRA_TYPE_TAG=true
 
+# Set task deadlines based on the end date of active/future Jira sprints
+JIRA_SPRINT_DEADLINES=true
+
 # Status Mapping - Configure how JIRA statuses map to Things scheduling
+
 # Tickets with these statuses go to "Today" in Things
 TODAY_STATUS=["In Progress", "Active", "Doing"]
 
-# Tickets with these statuses go to "Anytime" in Things (default for unlisted statuses)
+# Tickets with these statuses are marked as completed in Things
+COMPLETED_STATUS=["Done", "Closed", "Resolved", "Completed"]
+
+# Set the scheduling mode for Things tasks
+#
+# When set to "status", the lists below determine how tasks are scheduled
+# between "Anytime" and "Someday". When set to "sprint", tasks in the active
+# sprint are set to "Anytime" and all other tasks are set to "Someday".
+SCHEDULING_MODE=status
+
+# In "status" mode, tickets with these statuses go to "Anytime" in Things
+# (default for unlisted statuses)
 ANYTIME_STATUS=["To Do", "Open", "Ready", "Dev Ready"]
 
-# Tickets with these statuses go to "Someday" in Things  
+# In "status" mode, tickets with these statuses go to "Someday" in Things
 SOMEDAY_STATUS=["Backlog", "Future", "Product Backlog", "Icebox"]
-
-# Tickets with these statuses are marked as completed in Things
-COMPLETED_STATUS=["Done", "Closed", "Resolved", "Completed"] 

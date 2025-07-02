@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 import logging
+from datetime import datetime
 from pathlib import Path
 
 # Check if running in virtual environment
@@ -150,11 +151,16 @@ def update_db(db_manager: DatabaseManager, jira_client: JiraClient, config: dict
         
         if existing:
             # Check if ticket content has changed
-            has_changes = (existing.summary != issue.summary or 
-                          existing.description != issue.description or 
-                          existing.status != issue.status or 
-                          existing.issue_type != issue.issue_type)
-            
+            has_changes = (
+                existing.summary != issue.summary or
+                existing.description != issue.description or
+                existing.status != issue.status or
+                existing.issue_type != issue.issue_type or
+                existing.sprint_name != issue.sprint_name or
+                existing.sprint_status != issue.sprint_status or
+                existing.sprint_end_time != issue.sprint_end_time
+            )
+
             if has_changes:
                 logging.info(f"Updating ticket {issue.ticket_id}: {issue.summary}")
                 updated_count += 1
@@ -210,12 +216,20 @@ def _build_things_task_data(ticket: JiraTicket, config: dict, today_status: set,
     type_tag_enabled = config.get('JIRA_TYPE_TAG', 'false').lower() == 'true'
     if type_tag_enabled and ticket.issue_type:
         tags.append(ticket.issue_type.lower())
-    
+
+    # Add sprint deadline if enabled
+    end_date = ''
+    sprint_deadlines_enabled = config.get('JIRA_SPRINT_DEADLINES', 'false').lower() == 'true'
+    if sprint_deadlines_enabled and ticket.sprint_end_time and ticket.sprint_status != 'closed':
+        end_time = datetime.fromisoformat(ticket.sprint_end_time)
+        end_date = end_time.strftime('%Y-%m-%d')
+
     # Build kwargs for Things API
     kwargs = {
         'title': title,
         'notes': notes,
-        'tags': tags if tags else None
+        'tags': tags if tags else None,
+        'deadline': end_date,
     }
     
     # Set project if specified
@@ -223,14 +237,23 @@ def _build_things_task_data(ticket: JiraTicket, config: dict, today_status: set,
     if project:
         kwargs['list_str'] = project
     
+    scheduling_mode = config.get('SCHEDULING_MODE', 'status').lower()
+
     # Set scheduling based on ticket status
     if ticket.status in today_status:
         kwargs['when'] = 'today'
-    elif ticket.status in someday_status:
-        kwargs['when'] = 'someday'
     else:
-        kwargs['when'] = 'anytime'
-    
+        if scheduling_mode == 'status':
+            if ticket.status in someday_status:
+                kwargs['when'] = 'someday'
+            else:
+                kwargs['when'] = 'anytime'
+        elif scheduling_mode == 'sprint':
+            if ticket.sprint_status == 'active':
+                kwargs['when'] = 'anytime'
+            else:
+                kwargs['when'] = 'someday'
+
     # Mark as completed if needed
     if ticket.status in completed_status:
         kwargs['completed'] = True
