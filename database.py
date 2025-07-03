@@ -18,6 +18,7 @@ class JiraTicket:
     sprint_status: Optional[str] = None
     sprint_end_time: Optional[str] = None
     things_id: str = None
+    things_project: Optional[str] = None
     last_updated: str = None
 
 class DatabaseManager:
@@ -57,6 +58,7 @@ class DatabaseManager:
                     sprint_status TEXT,
                     sprint_end_time TIMESTAMP,
                     things_id TEXT,
+                    things_project TEXT,
                     added_to_db TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     synced_to_things TEXT DEFAULT 'not synced' CHECK(synced_to_things IN ('synced', 'not synced', 'unknown')),
                     last_updated TIMESTAMP
@@ -65,7 +67,7 @@ class DatabaseManager:
 
             # We don't have a full schema migration system, so this just attempts to add
             # any new columns from after the 1.0 release and skips if they already exist.
-            for field in ['sprint_name TEXT', 'sprint_status TEXT', 'sprint_end_time TEXT']:
+            for field in ['sprint_name TEXT', 'sprint_status TEXT', 'sprint_end_time TEXT', 'things_project TEXT']:
                 try:
                     cursor.execute(f"ALTER TABLE jira_tickets ADD COLUMN {field};")
                 except sqlite3.OperationalError as e:
@@ -79,24 +81,26 @@ class DatabaseManager:
 
     def save_ticket(self, ticket: JiraTicket) -> None:
         """Save or update a ticket in the database.
-        
+
         Only updates timestamps and sync status when actual changes are detected.
         """
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT summary, description, status, issue_type, sprint_name, sprint_status, sprint_end_time, things_id, synced_to_things
+                SELECT summary, description, status, issue_type, sprint_name, sprint_status, sprint_end_time, things_id, things_project, synced_to_things
                 FROM jira_tickets WHERE ticket_id = ?
             ''', (ticket.ticket_id,))
             row = cursor.fetchone()
             things_id = ticket.things_id
-            
+
             if row:
                 # Ticket exists - check for content changes
-                existing_summary, existing_description, existing_status, existing_issue_type, existing_sprint_name, existing_sprint_status, existing_sprint_end_time, existing_things_id, existing_synced = row
+                (existing_summary, existing_description, existing_status, existing_issue_type,
+                    existing_sprint_name, existing_sprint_status, existing_sprint_end_time,
+                    existing_things_id, existing_things_project, existing_synced) = row
                 if not things_id:
                     things_id = existing_things_id
-                
+
                 # Compare all relevant fields for changes
                 has_changes = (
                     existing_summary != ticket.summary or
@@ -105,7 +109,8 @@ class DatabaseManager:
                     existing_issue_type != ticket.issue_type or
                     existing_sprint_name != ticket.sprint_name or
                     existing_sprint_status != ticket.sprint_status or
-                    existing_sprint_end_time != ticket.sprint_end_time
+                    existing_sprint_end_time != ticket.sprint_end_time or
+                    existing_things_project != ticket.things_project
                 )
 
                 if not has_changes:
@@ -119,11 +124,11 @@ class DatabaseManager:
                         UPDATE jira_tickets
                         SET summary = ?, description = ?, has_subtasks = ?, status = ?,
                             issue_type = ?, sprint_name = ?, sprint_status = ?, sprint_end_time = ?,
-                            things_id = ?, synced_to_things = ?, last_updated = CURRENT_TIMESTAMP
+                            things_id = ?, things_project = ?, synced_to_things = ?, last_updated = CURRENT_TIMESTAMP
                         WHERE ticket_id = ?
                     ''', (ticket.summary, ticket.description, ticket.has_subtasks, ticket.status,
                           ticket.issue_type, ticket.sprint_name, ticket.sprint_status, ticket.sprint_end_time,
-                          things_id, 'not synced', ticket.ticket_id))
+                          things_id, ticket.things_project, 'not synced', ticket.ticket_id))
             else:
                 # New ticket - insert with current timestamps
                 logging.debug(f"Inserting new ticket {ticket.ticket_id}")
@@ -131,11 +136,11 @@ class DatabaseManager:
                     INSERT INTO jira_tickets
                     (ticket_id, summary, description, has_subtasks, status, issue_type,
                      sprint_name, sprint_status, sprint_end_time,
-                     things_id, synced_to_things, added_to_db, last_updated)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                     things_id, things_project, synced_to_things, added_to_db, last_updated)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 ''', (ticket.ticket_id, ticket.summary, ticket.description, ticket.has_subtasks,
                       ticket.status, ticket.issue_type, ticket.sprint_name, ticket.sprint_status,
-                      ticket.sprint_end_time, things_id, 'not synced'))
+                      ticket.sprint_end_time, things_id, ticket.things_project, 'not synced'))
 
             conn.commit()
 
@@ -144,27 +149,39 @@ class DatabaseManager:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             logging.debug("Retrieving all tickets from database")
-            cursor.execute('SELECT ticket_id, summary, description, has_subtasks, status, issue_type, sprint_name, sprint_status, sprint_end_time, things_id, last_updated FROM jira_tickets')
+            cursor.execute('''
+                SELECT ticket_id, summary, description, has_subtasks, status, issue_type, sprint_name,
+                sprint_status, sprint_end_time, things_id, things_project, last_updated FROM jira_tickets')
+            ''')
             return [JiraTicket(*row) for row in cursor.fetchall()]
 
     def get_unsynced_tickets(self) -> List[JiraTicket]:
         """Get tickets that haven't been synced to Things (status = 'not synced')."""
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('''
-                SELECT ticket_id, summary, description, has_subtasks, status,
-                       issue_type, sprint_name, sprint_status, sprint_end_time,
-                       things_id, last_updated
-                FROM jira_tickets
-                WHERE synced_to_things = 'not synced'
-            ''')
+            cursor.execute(
+                '''
+                    SELECT ticket_id, summary, description, has_subtasks, status,
+                        issue_type, sprint_name, sprint_status, sprint_end_time,
+                        things_id, things_project, last_updated
+                    FROM jira_tickets
+                    WHERE synced_to_things = 'not synced'
+                '''
+            )
             return [JiraTicket(*row) for row in cursor.fetchall()]
 
     def get_ticket_by_id(self, ticket_id: str) -> Optional[JiraTicket]:
         """Retrieve a specific ticket by its ID. Returns None if not found."""
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('SELECT ticket_id, summary, description, has_subtasks, status, issue_type, sprint_name, sprint_status, sprint_end_time, things_id, last_updated FROM jira_tickets WHERE ticket_id = ?', (ticket_id,))
+            cursor.execute(
+                '''
+                    SELECT ticket_id, summary, description, has_subtasks, status, issue_type, sprint_name,
+                        sprint_status, sprint_end_time, things_id, things_project, last_updated
+                    FROM jira_tickets WHERE ticket_id = ?
+                ''',
+                (ticket_id,)
+            )
             row = cursor.fetchone()
             if row:
                 return JiraTicket(*row)
