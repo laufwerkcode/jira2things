@@ -130,9 +130,11 @@ def update_db(db_manager: DatabaseManager, jira_client: JiraClient, config: dict
     """Update database with tickets from JIRA."""
     completed_status = parse_status_set(config, 'COMPLETED_STATUS')
     
+    jql_query = config.get("JIRA_JQL_QUERY", "project = DEMO AND status != Done ORDER BY created DESC")
+
     # Fetch all matching issues from JIRA
     logging.info("Fetching issues from JIRA...")
-    issues = jira_client.get_issues()
+    issues = jira_client.get_issues(jql_query)
     logging.debug(f"Retrieved {len(issues)} issues from JIRA")
     
     if not issues:
