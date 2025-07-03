@@ -134,6 +134,36 @@ ANYTIME_STATUS=['To Do', 'Open', 'New']
 COMPLETED_STATUS=['Done', 'Closed', 'Resolved']
 ```
 
+### Multiple Projects
+
+You can configure additional queries, each mapped to seperate Things projects
+
+Additional projects are defined by adding `THINGS_PROJECT__<name>` and `JIRA_JQL_QUERY__<name>` entries to the config.
+
+For example, to create separate projects for web and API tickets, you can add:
+
+```ini
+THINGS_PROJECT__API=API Tickets
+JIRA_JQL_QUERY__API=assignee = currentUser() AND updated >= -14d AND project = API
+
+THINGS_PROJECT__WEB=Web Tickets
+JIRA_JQL_QUERY__WEB=assignee = currentUser() AND updated >= -14d AND project = WEB
+```
+
+Since there's a 1:1 mapping between Jira tickets and Things tasks, tickets can only be assigned to one project at a time. Because of this, these queries should be non-overlapping, both between each other and with the main JIRA_JQL_QUERY.
+
+This can also be used to separate tickets in the active sprint from those in the backlog:
+
+Configure the "main" project/query as the backlog and add a second project/query for the active sprint:
+
+```ini
+THINGS_PROJECT=Backlog
+JIRA_JQL_QUERY=assignee = currentUser() AND updated >= -14d AND (Sprint IS null OR Sprint NOT IN openSprints())
+
+THINGS_PROJECT__ACTIVE=Current Sprint
+JIRA_JQL_QUERY__ACTIVE=assignee = currentUser() AND Sprint IN openSprints()
+```
+
 ## Status Mapping Logic
 
 The app maps JIRA ticket statuses to Things 3 scheduling areas:
