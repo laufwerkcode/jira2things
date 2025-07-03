@@ -38,10 +38,9 @@ class JiraClient:
             logging.error(f"Failed to connect to JIRA: {str(e)}")
             raise
 
-    def get_issues(self) -> List[JiraTicket]:
-        """Retrieve issues from JIRA based on configured JQL query."""
-        jql_query = self.config.jql_query
-        
+    def get_issues(self, jql_query) -> List[JiraTicket]:
+        """Retrieve issues from JIRA based on given JQL query."""
+
         # Replace currentUser() placeholder if present
         if 'currentUser()' in jql_query and self.config.user_email:
             jql_query = jql_query.replace('currentUser()', f'"{self.config.user_email}"')
