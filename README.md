@@ -134,6 +134,18 @@ ANYTIME_STATUS=['To Do', 'Open', 'New']
 COMPLETED_STATUS=['Done', 'Closed', 'Resolved']
 ```
 
+### Missing Tickets
+
+When tickets are deleted or reassigned in Jira, they may stop being returned in the JQL response.
+
+To handle this, you can enable the following option to mark missing tickets as canceled in Things:
+
+```ini
+CANCEL_MISSING_TICKETS=true
+```
+
+If a cancelled ticket later reappears, it will be un-canceled.
+
 ## Status Mapping Logic
 
 The app maps JIRA ticket statuses to Things 3 scheduling areas:
