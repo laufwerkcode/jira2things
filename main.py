@@ -200,6 +200,8 @@ def update_db(db_manager: DatabaseManager, jira_client: JiraClient, config: dict
             # Save ticket (will only update DB if changes detected)
             db_manager.save_ticket(issue)
 
+    db_manager.mark_present(sum([issues for _, issues in issues_by_query], []))
+
     # Report processing summary
     total_processed = added_count + updated_count + unchanged_count
     logging.info(f"Database update complete: {added_count} tickets added, {updated_count} tickets updated, {unchanged_count} unchanged (Total processed: {total_processed})")
@@ -279,6 +281,10 @@ def _build_things_task_data(ticket: JiraTicket, config: dict, today_status: set,
     # Mark as completed if needed
     if ticket.status in completed_status:
         kwargs['completed'] = True
+
+    cancel_missing_tickets = config.get('CANCEL_MISSING_TICKETS', 'false').lower() == 'true'
+    if cancel_missing_tickets:
+        kwargs['canceled'] = not ticket.present_in_last_fetch
 
     return kwargs
 

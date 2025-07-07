@@ -72,3 +72,7 @@ SOMEDAY_STATUS=["Backlog", "Future", "Product Backlog", "Icebox"]
 #
 # THINGS_PROJECT__ACTIVE=Current Sprint
 # JIRA_JQL_QUERY__ACTIVE=assignee = currentUser() AND Sprint IN openSprints()
+
+# Should missing tickets be marked as canceled in Things?
+# For example, if a ticket is reassigned or deleted in Jira, it will not be returned in the JQL fetch.
+CANCEL_MISSING_TICKETS=false
