@@ -278,12 +278,13 @@ def _build_things_task_data(ticket: JiraTicket, config: dict, today_status: set,
             else:
                 kwargs['when'] = 'someday'
 
-    # Mark as completed if needed
+    # Mark as completed/canceled if needed
+    cancel_missing_tickets = config.get('CANCEL_MISSING_TICKETS', 'false').lower() == 'true'
+
     if ticket.status in completed_status:
         kwargs['completed'] = True
-
-    cancel_missing_tickets = config.get('CANCEL_MISSING_TICKETS', 'false').lower() == 'true'
-    if cancel_missing_tickets:
+        kwargs['canceled'] = False
+    elif cancel_missing_tickets:
         kwargs['canceled'] = not ticket.present_in_last_fetch
 
     return kwargs
