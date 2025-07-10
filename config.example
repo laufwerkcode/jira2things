@@ -22,8 +22,12 @@ TODAY_STATUS=["In Progress", "Active", "Doing"]
 # Tickets with these statuses go to "Anytime" in Things (default for unlisted statuses)
 ANYTIME_STATUS=["To Do", "Open", "Ready", "Dev Ready"]
 
-# Tickets with these statuses go to "Someday" in Things  
+# Tickets with these statuses go to "Someday" in Things
 SOMEDAY_STATUS=["Backlog", "Future", "Product Backlog", "Icebox"]
 
 # Tickets with these statuses are marked as completed in Things
-COMPLETED_STATUS=["Done", "Closed", "Resolved", "Completed"] 
+COMPLETED_STATUS=["Done", "Closed", "Resolved", "Completed"]
+
+# Should missing tickets be marked as canceled in Things?
+# For example, if a ticket is reassigned or deleted in Jira, it will not be returned in the JQL fetch.
+CANCEL_MISSING_TICKETS=false

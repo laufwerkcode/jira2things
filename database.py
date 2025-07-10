@@ -14,6 +14,7 @@ class JiraTicket:
     status: str
     issue_type: str = None
     things_id: str = None
+    present_in_last_fetch: bool = True
     last_updated: str = None
 
 class DatabaseManager:
@@ -51,10 +52,21 @@ class DatabaseManager:
                     issue_type TEXT,
                     things_id TEXT,
                     added_to_db TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    present_in_last_fetch BOOLEAN NOT NULL DEFAULT 1,
                     synced_to_things TEXT DEFAULT 'not synced' CHECK(synced_to_things IN ('synced', 'not synced', 'unknown')),
                     last_updated TIMESTAMP
                 )
             ''')
+
+            # We don't have a full schema migration system, so this just attempts to add
+            # any new columns from after the 1.0 release and skips if they already exist.
+            for field in ['present_in_last_fetch BOOLEAN NOT NULL DEFAULT 1']:
+                try:
+                    cursor.execute(f"ALTER TABLE jira_tickets ADD COLUMN {field};")
+                except sqlite3.OperationalError as e:
+                    if "duplicate column name" not in str(e):
+                        raise
+
             conn.commit()
             logging.info("Database initialization complete")
 
@@ -116,7 +128,7 @@ class DatabaseManager:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             logging.debug("Retrieving all tickets from database")
-            cursor.execute('SELECT ticket_id, summary, description, has_subtasks, status, issue_type, things_id, last_updated FROM jira_tickets')
+            cursor.execute('SELECT ticket_id, summary, description, has_subtasks, status, issue_type, things_id, present_in_last_fetch, last_updated FROM jira_tickets')
             return [JiraTicket(*row) for row in cursor.fetchall()]
 
     def get_unsynced_tickets(self) -> List[JiraTicket]:
@@ -135,8 +147,34 @@ class DatabaseManager:
         """Retrieve a specific ticket by its ID. Returns None if not found."""
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('SELECT ticket_id, summary, description, has_subtasks, status, issue_type, things_id, last_updated FROM jira_tickets WHERE ticket_id = ?', (ticket_id,))
+            cursor.execute('SELECT ticket_id, summary, description, has_subtasks, status, issue_type, things_id, present_in_last_fetch, last_updated FROM jira_tickets WHERE ticket_id = ?', (ticket_id,))
             row = cursor.fetchone()
             if row:
                 return JiraTicket(*row)
-            return None 
+            return None
+
+    def mark_present(self, all_issues: List[JiraTicket]):
+        """Mark the given issues as present in the last fetch, updating sync status as necessary."""
+        with self.get_connection() as conn:
+            ticket_ids = [ticket.ticket_id for ticket in all_issues]
+            if not ticket_ids:
+                return
+
+            cursor = conn.cursor()
+
+            cursor.execute(
+                '''
+                    UPDATE jira_tickets
+                    SET present_in_last_fetch = ticket_id IN ({}),
+                        synced_to_things = CASE
+                            WHEN synced_to_things = 'synced' AND present_in_last_fetch != (ticket_id IN ({})) THEN 'not synced'
+                            ELSE synced_to_things
+                        END
+                '''.format(
+                    ','.join('?' * len(ticket_ids)),
+                    ','.join('?' * len(ticket_ids))
+                ),
+                ticket_ids + ticket_ids
+            )
+
+            conn.commit()
