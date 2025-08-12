@@ -44,8 +44,8 @@ class ThingsSyncer:
     def create_things_todo(self, ticket_id: str, summary: str, description: str):
         """Create a new todo in Things and return its ID"""
         # Create the todo with JIRA ticket reference in notes
-        jira_url = f"{self.db_manager.jira_base_url}/browse/{ticket_id}"
-        notes = f"{jira_url}\n\n{description}"
+        jira_url = f"[{ticket_id}]({self.db_manager.jira_base_url}/browse/{ticket_id})"
+        notes = f"{jira_url}"
         
         # Create the task data
         task_data = [{
