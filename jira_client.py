@@ -47,11 +47,29 @@ class JiraClient:
             jql_query = jql_query.replace('currentUser()', f'"{self.config.user_email}"')
         
         logging.debug(f"Using JQL query: {jql_query}")
-        
+
+        try:
+            fields = self.jira.fields()
+
+            # find sprint field if it exists
+            sprint_field = next((field for field in fields if field.get('schema', {}).get('custom', '') == 'com.pyxis.greenhopper.jira:gh-sprint'), None)
+        except Exception as e:
+            logging.error(f"Error fetching fields from JIRA: {str(e)}")
+            raise
+
+        fields = [
+            'summary',
+            'description',
+            'subtasks',
+            'status',
+            'issuetype',
+            sprint_field['id'] if sprint_field else None
+        ]
+
         try:
             issues = self.jira.search_issues(
                 jql_query,
-                fields='summary,description,subtasks,status,issuetype', 
+                fields=','.join(filter(None, fields)),
                 maxResults=100  # Consider making this configurable
             )
             
@@ -73,13 +91,26 @@ class JiraClient:
                 issue_type = getattr(issue.fields, 'issuetype', None)
                 issue_type_name = issue_type.name if issue_type else ''
 
+                sprints = getattr(issue.fields, sprint_field['id'], []) if sprint_field else []
+                latest_sprint = sorted(
+                    sprints,
+                    key=lambda s: s.endDate if hasattr(s, 'endDate') else datetime.min.isoformat(),
+                    reverse=True
+                )[0] if sprints else None
+                sprint_name = getattr(latest_sprint, 'name', None)
+                sprint_status = getattr(latest_sprint, 'state', None)
+                sprint_end_time = getattr(latest_sprint, 'endDate', '').replace('Z', '+00:00')
+
                 ticket = JiraTicket(
                     ticket_id=issue.key,
                     summary=summary,
                     description=description,
                     has_subtasks=len(subtasks) > 0,
                     status=status_name,
-                    issue_type=issue_type_name
+                    issue_type=issue_type_name,
+                    sprint_name=sprint_name,
+                    sprint_status=sprint_status,
+                    sprint_end_time=sprint_end_time,
                 )
                 logging.debug(f"Processing issue {ticket.ticket_id}: {ticket.summary}")
                 tickets.append(ticket)

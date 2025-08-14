@@ -116,7 +116,25 @@ THINGS_TAGS=['jira', 'work']
 JIRA_TYPE_TAG=true
 ```
 
-### Status Mapping
+### Sprint Deadlines
+
+Set task deadlines based on the end dates of Jira sprints. Only active and future sprints are considered.
+
+```ini
+JIRA_SPRINT_DEADLINES=true
+```
+
+### Status Mapping / Scheduling
+
+Tickets can be scheduled using one of two scheduling modes: `status` or `sprint`.
+
+#### Status Mode
+
+In status mode, tickets are scheduled based soley on their Jira status. This is the default mode.
+
+```ini
+SCHEDULING_MODE=status
+```
 
 Configure how JIRA statuses map to Things scheduling:
 
@@ -134,9 +152,22 @@ ANYTIME_STATUS=['To Do', 'Open', 'New']
 COMPLETED_STATUS=['Done', 'Closed', 'Resolved']
 ```
 
-## Status Mapping Logic
+#### Sprint Mode
 
-The app maps JIRA ticket statuses to Things 3 scheduling areas:
+```ini
+SCHEDULING_MODE=sprint
+```
+
+In `sprint` mode, tickets are scheduled based on their sprint and status:
+
+- Tickets in an active sprint are scheduled to "Anytime"
+- Tickets in past/future sprints are scheduled to "Someday"
+- Any tickets with a status in `TODAY_STATUS` are scheduled to "Today"
+- Tickets with a status in `COMPLETED_STATUS` are marked as completed in Things
+
+## Status / Scheduling Logic
+
+The app maps JIRA ticket statuses or sprints to Things 3 scheduling areas:
 
 - **Today**: Urgent/active work (appears in Today view)
 - **Anytime**: Ready to work on (appears in Anytime list)
