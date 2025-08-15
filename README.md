@@ -116,7 +116,25 @@ THINGS_TAGS=['jira', 'work']
 JIRA_TYPE_TAG=true
 ```
 
-### Status Mapping
+### Sprint Deadlines
+
+Set task deadlines based on the end dates of Jira sprints. Only active and future sprints are considered.
+
+```ini
+JIRA_SPRINT_DEADLINES=true
+```
+
+### Status Mapping / Scheduling
+
+Tickets can be scheduled using one of two scheduling modes: `status` or `sprint`.
+
+#### Status Mode
+
+In status mode, tickets are scheduled based soley on their Jira status. This is the default mode.
+
+```ini
+SCHEDULING_MODE=status
+```
 
 Configure how JIRA statuses map to Things scheduling:
 
@@ -134,9 +152,64 @@ ANYTIME_STATUS=['To Do', 'Open', 'New']
 COMPLETED_STATUS=['Done', 'Closed', 'Resolved']
 ```
 
-## Status Mapping Logic
+### Missing Tickets
 
-The app maps JIRA ticket statuses to Things 3 scheduling areas:
+When tickets are deleted or reassigned in Jira, they may stop being returned in the JQL response.
+
+To handle this, you can enable the following option to mark missing tickets as canceled in Things:
+
+```ini
+CANCEL_MISSING_TICKETS=true
+```
+
+If a cancelled ticket later reappears, it will be un-canceled.
+
+### Multiple Projects
+
+You can configure additional queries, each mapped to seperate Things projects
+
+Additional projects are defined by adding `THINGS_PROJECT__<name>` and `JIRA_JQL_QUERY__<name>` entries to the config.
+
+For example, to create separate projects for web and API tickets, you can add:
+
+```ini
+THINGS_PROJECT__API=API Tickets
+JIRA_JQL_QUERY__API=assignee = currentUser() AND updated >= -14d AND project = API
+
+THINGS_PROJECT__WEB=Web Tickets
+JIRA_JQL_QUERY__WEB=assignee = currentUser() AND updated >= -14d AND project = WEB
+```
+
+Since there's a 1:1 mapping between Jira tickets and Things tasks, tickets can only be assigned to one project at a time. Because of this, these queries should be non-overlapping, both between each other and with the main JIRA_JQL_QUERY.
+
+This can also be used to separate tickets in the active sprint from those in the backlog:
+
+Configure the "main" project/query as the backlog and add a second project/query for the active sprint:
+
+```ini
+THINGS_PROJECT=Backlog
+JIRA_JQL_QUERY=assignee = currentUser() AND updated >= -14d AND (Sprint IS null OR Sprint NOT IN openSprints())
+
+THINGS_PROJECT__ACTIVE=Current Sprint
+JIRA_JQL_QUERY__ACTIVE=assignee = currentUser() AND Sprint IN openSprints()
+```
+
+#### Sprint Mode
+
+```ini
+SCHEDULING_MODE=sprint
+```
+
+In `sprint` mode, tickets are scheduled based on their sprint and status:
+
+- Tickets in an active sprint are scheduled to "Anytime"
+- Tickets in past/future sprints are scheduled to "Someday"
+- Any tickets with a status in `TODAY_STATUS` are scheduled to "Today"
+- Tickets with a status in `COMPLETED_STATUS` are marked as completed in Things
+
+## Status / Scheduling Logic
+
+The app maps JIRA ticket statuses or sprints to Things 3 scheduling areas:
 
 - **Today**: Urgent/active work (appears in Today view)
 - **Anytime**: Ready to work on (appears in Anytime list)
