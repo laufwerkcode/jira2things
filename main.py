@@ -189,6 +189,16 @@ def update_db(db_manager: DatabaseManager, jira_client: JiraClient, config: dict
     total_processed = added_count + updated_count + unchanged_count
     logging.info(f"Database update complete: {added_count} tickets added, {updated_count} tickets updated, {unchanged_count} unchanged (Total processed: {total_processed})")
 
+# Things rejects notes longer than 10,000 characters
+THINGS_NOTES_MAX_LENGTH = 10000
+NOTES_TRUNCATION_MARKER = "\n\n[Truncated - see Jira for full description]"
+
+def _truncate_notes(notes: str) -> str:
+    """Truncate notes to fit within the Things notes length limit."""
+    if len(notes) <= THINGS_NOTES_MAX_LENGTH:
+        return notes
+    return notes[:THINGS_NOTES_MAX_LENGTH - len(NOTES_TRUNCATION_MARKER)] + NOTES_TRUNCATION_MARKER
+
 def _build_things_task_data(ticket: JiraTicket, config: dict, today_status: set, someday_status: set, completed_status: set, jira_base_url: str):
     """Build task data dictionary for Things integration."""
     import ast
@@ -196,7 +206,7 @@ def _build_things_task_data(ticket: JiraTicket, config: dict, today_status: set,
     # Basic task information
     title = f"[{ticket.ticket_id}] {ticket.summary}"
     jira_url = f"{jira_base_url}/browse/{ticket.ticket_id}"
-    notes = f"{jira_url}\n\n{ticket.description}"
+    notes = _truncate_notes(f"{jira_url}\n\n{ticket.description}")
     
     # Handle tags configuration
     tags = []
